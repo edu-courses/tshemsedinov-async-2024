@@ -1,3 +1,5 @@
+'use strict'
+
 const total = (items, callback) => {
   let result = 0;
   for (const item of items) {
