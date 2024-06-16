@@ -44,24 +44,21 @@ const budget = (limit) => {
 };
 
 // Usage
-
 const wallet = budget(1650);
 
-
-
-const countGroup = (group) => {
-  let amount = 0;
-  groupTotal(group, (subtotal) => {
-    wallet.withdraw(subtotal, (success) => {
-      if (success) amount += subtotal;
-      wallet.rest((balance) => {
-        console.log({ success, amount, subtotal, balance });
-      });
+const calcGroupTotal = (amount) => (subtotal) => {
+  wallet.withdraw(subtotal, (success) => {
+    if (success) amount += subtotal;
+    wallet.rest((balance) => {
+      console.log({ success, amount, subtotal, balance });
     });
-  })
-};
-
+  });
+}
 
 getPurchase((purchase) => {
-  iterateGroups(purchase, countGroup);
+  let amount = 0;
+  const callback = calcGroupTotal(amount);
+  iterateGroups(purchase, (group) => {
+    groupTotal(group, callback);
+  });
 });
