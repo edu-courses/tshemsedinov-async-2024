@@ -11,7 +11,7 @@
 const MAX_PURCHASE = 2000;
 
 const calculateSubtotal = (error, goods, callback) => {
-  if (error) return error;
+  if (error) return void callback(error);
   let amount = 0;
   for (const item of goods) {
     if (typeof item.name !== 'string') {
@@ -29,12 +29,12 @@ const calculateSubtotal = (error, goods, callback) => {
 };
 
 const calculateTotal = (error, order, callback) => {
-  if (error) return error;
+  if (error) return void callback(error);
   const expenses = new Map();
   let total = 0;
   for (const groupName in order) {
     const goods = order[groupName];
-    calculateSubtotal(goods, (amount) => {
+    calculateSubtotal(error, goods, (amount) => {
       total += amount;
       expenses.set(groupName, amount);
     });
@@ -59,8 +59,12 @@ const purchase = {
 
 try {
   console.log(purchase);
-  calculateTotal(purchase, (bill) => {
-    console.log(bill);
+  calculateTotal(null, purchase, (error, bill) => {
+    if (error) {
+      throw error;
+    } else {
+      console.log(bill);
+    }
   });
 } catch (error) {
   console.log('Error detected');
