@@ -10,8 +10,7 @@
 
 const MAX_PURCHASE = 2000;
 
-const calculateSubtotal = (error, goods, callback) => {
-  if (error) return void callback(error);
+const calculateSubtotal = (goods, callback) => {
   let amount = 0;
   for (const item of goods) {
     if (typeof item.name !== 'string') {
@@ -28,21 +27,28 @@ const calculateSubtotal = (error, goods, callback) => {
   callback(null, amount);
 };
 
-const calculateTotal = (error, order, callback) => {
-  if (error) return void callback(error);
+const calculateTotal = (order, callback) => {
   const expenses = new Map();
+  const errors = [];
   let total = 0;
   for (const groupName in order) {
     const goods = order[groupName];
-    calculateSubtotal(error, goods, (amount) => {
+    calculateSubtotal(goods, (error, amount) => {
+      if (error) return void errors.push(error);
       total += amount;
       expenses.set(groupName, amount);
     });
     if (total > MAX_PURCHASE) {
-      return void callback(new Error('Total is above the limit'));
+      errors.push(new Error('Total is above the limit'));
+      break;
     }
   }
-  return callback(null, { total, expenses });
+  if (errors.length > 0) {
+    const cause = new AggregateError(errors, 'Caused by');
+    const error = new Error('Can not calculate total', { cause });
+    return void callback(error);
+  }
+  callback(null, { total: total.value, expenses });
 };
 
 const purchase = {
@@ -57,16 +63,12 @@ const purchase = {
   ],
 };
 
-try {
-  console.log(purchase);
-  calculateTotal(null, purchase, (error, bill) => {
-    if (error) {
-      throw error;
-    } else {
-      console.log(bill);
-    }
-  });
-} catch (error) {
-  console.log('Error detected');
-  console.error(error);
-}
+console.log(purchase);
+calculateTotal(purchase, (error, bill) => {
+  if (error) {
+    console.log('Error detected');
+    console.dir(error, { depth: null });
+  } else {
+    console.log(bill);
+  }
+});
